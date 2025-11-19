@@ -1,15 +1,14 @@
-import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { GraduationCap, Coffee, ArrowRight, Building2, Search, PlusCircle, MapPin, Clock, Users, Phone, Mail, CreditCard } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/use-toast";
+import { ArrowRight, Coffee, GraduationCap, MapPin, PlusCircle, Search } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 // Define interfaces for data structures
 interface College {
@@ -79,6 +78,7 @@ export default function Onboarding() {
 
   const API_BASE_URL = 'http://localhost:8080/api';
 
+
   // Function to get Basic Auth header from localStorage user data
   // This useCallback now has no dependencies, making it stable and preventing re-creation
   const getAuthHeader = useCallback(() => {
@@ -109,7 +109,7 @@ export default function Onboarding() {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/users/${user.id}`, {
+      const response = await fetch(`${API_BASE_URL}/users/me`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -360,14 +360,17 @@ export default function Onboarding() {
 
       // Link user to the selected/created college
       if (user && targetCollegeId) {
-        const response = await fetch(`${API_BASE_URL}/users/${user.id}`, {
+        const response = await fetch(`${API_BASE_URL}/users/me`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': getAuthHeader(),
           },
-          body: JSON.stringify({ college: { collegeId: targetCollegeId } }),
-        });
+          body: JSON.stringify({
+            college: {
+              collegeId: targetCollegeId
+            }
+          })        });
 
         if (response.ok) {
           // After a successful PUT, refetch the user's details to get the updated associations
@@ -475,7 +478,7 @@ export default function Onboarding() {
 
       // Link user to the selected/created cafeteria
       if (user && targetCafeteriaId) {
-        const response = await fetch(`${API_BASE_URL}/users/${user.id}`, {
+        const response = await fetch(`${API_BASE_URL}/users/me`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -527,7 +530,7 @@ export default function Onboarding() {
     setIsLoading(true);
     try {
       if (user) {
-        const response = await fetch(`${API_BASE_URL}/users/${user.id}`, {
+        const response = await fetch(`${API_BASE_URL}/users/me`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',

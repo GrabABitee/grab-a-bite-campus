@@ -118,7 +118,7 @@ export default function LandingPage() {
       
       try {
         // Call the /api/onboarding endpoint to register as a STUDENT
-        const response = await fetch(`${API_BASE_URL}/onboarding`, {
+        const response = await fetch(`${API_BASE_URL}/onboarding/user`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
