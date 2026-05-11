@@ -1,147 +1,219 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Minus, Heart, Star } from "lucide-react";
+import { Plus, Minus, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useCart } from "@/context/CartContext";
 
 interface FoodItem {
-  id: string;
+  menuItemId: string;
+
+  cafeteria?: {
+    cafeteriaId: string;
+  };
+
   name: string;
   description: string;
   price: number;
-  image: string;
-  category: string;
-  rating: number;
-  isVeg: boolean;
-  isAvailable: boolean;
+
+  imageUrl?: string;
+  category?: string;
+  rating?: number;
+  isVeg?: boolean;
+  isAvailable?: boolean;
   prepTime?: number;
 }
 
 interface FoodCardProps {
   item: FoodItem;
-  onAddToCart?: (item: FoodItem, quantity: number) => void;
   className?: string;
 }
 
-export const FoodCard = ({ item, onAddToCart, className }: FoodCardProps) => {
-  const [quantity, setQuantity] = useState(0);
+export const FoodCard = ({
+  item,
+  className,
+}: FoodCardProps) => {
 
-  const handleAddToCart = () => {
-    if (quantity > 0 && onAddToCart) {
-      onAddToCart(item, quantity);
-    }
-  };
+  const {
+    cart,
+    addToCart,
+    removeFromCart,
+  } = useCart();
 
-  const incrementQuantity = () => {
-    setQuantity(prev => prev + 1);
-  };
+  const cartItem = cart.find(
+    (c: any) =>
+      c.menuItemId === item.menuItemId
+  );
 
-  const decrementQuantity = () => {
-    setQuantity(prev => Math.max(0, prev - 1));
-  };
+  const quantity = cartItem?.quantity || 0;
 
   return (
-    <Card className={cn(
-      "flex overflow-hidden transition-all duration-200 hover:shadow-md",
-      !item.isAvailable && "opacity-60",
-      className
-    )}>
-      {/* Mobile Image */}
-      <div className="relative w-20 h-20 flex-shrink-0">
+
+    <Card
+      className={cn(
+        "flex overflow-hidden transition-all duration-200 hover:shadow-md",
+        !item.isAvailable && "opacity-60",
+        className
+      )}
+    >
+
+      {/* IMAGE */}
+
+      <div className="relative w-24 h-24 flex-shrink-0">
+
         <img
-          src={item.image}
+          src={
+            item.imageUrl ||
+            "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=400"
+          }
           alt={item.name}
           className="w-full h-full object-cover"
         />
-        <div className="absolute top-1 left-1">
-          <div className={cn(
-            "w-3 h-3 rounded border flex items-center justify-center",
-            item.isVeg ? "border-green-500" : "border-red-500"
-          )}>
-            <div className={cn(
-              "w-1.5 h-1.5 rounded",
-              item.isVeg ? "bg-green-500" : "bg-red-500"
-            )} />
-          </div>
-        </div>
+
       </div>
 
+      {/* CONTENT */}
+
       <CardContent className="p-3 flex-1 flex flex-col justify-between">
+
         <div className="space-y-1">
+
           <div className="flex items-start justify-between">
+
             <h3 className="font-medium text-sm text-foreground leading-tight line-clamp-1">
               {item.name}
             </h3>
+
             <div className="flex items-center gap-1 text-xs text-muted-foreground ml-2">
+
               <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-              {item.rating}
+
+              {item.rating || 4.5}
+
             </div>
+
           </div>
-          
+
+          <p className="text-xs text-muted-foreground line-clamp-2">
+            {item.description}
+          </p>
+
           <div className="flex items-center justify-between">
+
             <div className="text-base font-bold text-primary">
               ₹{item.price}
             </div>
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              {item.prepTime && <span>{item.prepTime}m</span>}
-            </div>
+
+            {item.prepTime && (
+              <span className="text-xs text-muted-foreground">
+                {item.prepTime}m
+              </span>
+            )}
+
           </div>
+
         </div>
-        
+
+        {/* ACTIONS */}
+
         <div className="flex items-center justify-between mt-2">
-          {item.isAvailable ? (
-            quantity === 0 ? (
-              <Button 
-                variant="food" 
-                size="sm" 
-                onClick={incrementQuantity}
-                className="h-7 px-3 text-xs"
-              >
-                <Plus className="h-3 w-3 mr-1" />
-                Add
-              </Button>
-            ) : (
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-6 w-6 p-0"
-                  onClick={decrementQuantity}
-                >
-                  <Minus className="h-3 w-3" />
-                </Button>
-                <span className="w-6 text-center text-sm font-medium">
-                  {quantity}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-6 w-6 p-0"
-                  onClick={incrementQuantity}
-                >
-                  <Plus className="h-3 w-3" />
-                </Button>
-              </div>
-            )
-          ) : (
-            <Button variant="ghost" size="sm" disabled className="text-xs">
+
+          {!item.isAvailable ? (
+
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled
+              className="text-xs"
+            >
               Out of Stock
             </Button>
-          )}
-          
-          {quantity > 0 && (
-            <Button 
-              variant="food" 
+
+          ) : quantity === 0 ? (
+
+            <Button
+              variant="food"
               size="sm"
-              className="h-7 text-xs ml-2"
-              onClick={handleAddToCart}
+              className="h-7 px-3 text-xs"
+              onClick={() =>
+                addToCart({
+                  menuItemId: item.menuItemId,
+
+                  name: item.name,
+
+                  price: item.price,
+
+                  imageUrl: item.imageUrl,
+
+                  quantity: 1,
+                })
+              }
             >
-              ₹{(item.price * quantity)}
+
+              <Plus className="h-3 w-3 mr-1" />
+
+              Add
+
             </Button>
+
+          ) : (
+
+            <div className="flex items-center gap-2">
+
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 w-7 p-0"
+                onClick={() =>
+                  removeFromCart(item.menuItemId)
+                }
+              >
+                <Minus className="h-3 w-3" />
+              </Button>
+
+              <span className="font-medium text-sm w-4 text-center">
+                {quantity}
+              </span>
+
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 w-7 p-0"
+                onClick={() =>
+                  addToCart({
+                    menuItemId: item.menuItemId,
+
+
+                    name: item.name,
+
+                    price: item.price,
+
+                    imageUrl: item.imageUrl,
+
+                    quantity: 1,
+                  })
+                }
+              >
+                <Plus className="h-3 w-3" />
+              </Button>
+
+            </div>
+
           )}
+
+          {quantity > 0 && (
+
+            <div className="bg-orange-100 text-orange-600 text-xs font-bold px-3 py-1 rounded-lg">
+
+              ₹{item.price * quantity}
+
+            </div>
+
+          )}
+
         </div>
+
       </CardContent>
+
     </Card>
   );
 };

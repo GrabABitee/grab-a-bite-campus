@@ -34,7 +34,7 @@ export default function Onboarding() {
   const [newCafeteriaLocation, setNewCafeteriaLocation] = useState("");
   const [newCafeteriaIsOpen, setNewCafeteriaIsOpen] = useState(true);
 
-  const role = auth?.role;
+  const role = user?.role?.[0];
 
   /* ================= LOAD USER ================= */
 
@@ -79,46 +79,42 @@ export default function Onboarding() {
       const data = await api.getCurrentUser();
       setUser(data);
   
-      /*
-        ADMIN should never see onboarding
-      */
-      if (role === "ADMIN") {
-        navigate("/admin");
+      const isAdmin = data.roles.includes("ADMIN");
+      const isCafeAdmin = data.roles.includes("CAFETERIA_ADMIN");
+  
+      // ✅ ADMIN → skip onboarding
+      if (isAdmin) {
+        navigate("/admin/entry");
         return;
       }
   
-      /*
-        CAFETERIA OWNER should go to admin dashboard
-        (if cafeteria assigned)
-      */
-      if (role === "CAFETERIA_OWNER" && data?.cafeteria) {
-        navigate("/admin");
+      // ✅ CAFETERIA ADMIN
+      if (isCafeAdmin && data?.cafeteriaId) {
+        navigate("/admin/entry");
         return;
       }
   
-      /*
-        STUDENT FLOW
-      */
+      // ✅ STUDENT FLOW
   
-      // If college remembered → skip college
-      if (data?.college && data?.rememberCollege) {
+      if (data?.collegeId && data?.rememberCollege) {
         setStep(2);
         return;
       }
   
-      // If college exists but not remembered → ask again
-      if (data?.college && !data?.rememberCollege) {
-        setStep(1);
-        return;
-      }
-  
-      // No college yet
       setStep(1);
   
     } catch {
       navigate("/");
     }
   };
+  useEffect(() => {
+    if(!auth?.token){
+      navigate("/");
+      return;
+    }
+  loadUser();
+  },[auth]);
+  
 
   /* ================= LOAD COLLEGES ================= */
 
@@ -145,15 +141,17 @@ export default function Onboarding() {
   }, [step, toast]);
 
   /* ================= LOAD CAFETERIAS ================= */
-
+  console.log("USER:", user);
+  console.log("COLLEGE ID:", user?.collegeId);
+  console.log("STEP:", step);
   useEffect(() => {
 
-    if (step !== 2 || !user?.college?.collegeId) return;
-
+    if (step !== 2 ) return;
+    if (!user?.collegeId) return;
     const loadCafeterias = async () => {
       try {
 
-        const cafes = await api.getCafeterias(user.college.collegeId);
+        const cafes = await api.getCafeterias(user.collegeId);
         setExistingCafeterias(cafes);
 
       } catch {
@@ -184,7 +182,7 @@ export default function Onboarding() {
     try {
   
       let targetCollegeId = collegeIdInput;
-  
+  const isAdmin = user?.roles.includes("ADMIN");
       if (role === "ADMIN" && newCollegeName && newCollegeAddress) {
   
         const college = await api.createCollege({
@@ -273,57 +271,94 @@ export default function Onboarding() {
 
   /* ================= CAFETERIA SUBMIT ================= */
 
+  // const handleCafeteriaSubmit = async () => {
+
+  //   if (!cafeteriaIdInput && !(newCafeteriaName && newCafeteriaLocation)) {
+  //     toast({
+  //       title: "Please select or create a cafeteria",
+  //       variant: "destructive",
+  //     });
+  //     return;
+  //   }
+
+  //   setIsLoading(true);
+
+  //   try {
+
+  //     let targetCafeteriaId = cafeteriaIdInput;
+
+  //     if (role === "ADMIN" && newCafeteriaName && newCafeteriaLocation) {
+
+  //       const cafeteria = await api.createCafeteria({
+  //         name: newCafeteriaName,
+  //         location: newCafeteriaLocation,
+  //         isOpen: newCafeteriaIsOpen,
+  //         collegeId: user.collegeId,
+  //       });
+
+  //       targetCafeteriaId = cafeteria.cafeteriaId;
+  //     }
+
+  //     localStorage.setItem("cafeteriaId",targetCafeteriaId);
+
+  //     toast({
+  //       title: "Setup completed",
+  //     });
+
+  //     if (role === "ADMIN") navigate("/admin");
+  //     else navigate("/dashboard");
+
+  //   } catch {
+
+  //     toast({
+  //       title: "Error completing setup",
+  //       variant: "destructive",
+  //     });
+
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
   const handleCafeteriaSubmit = async () => {
 
-    if (!cafeteriaIdInput && !(newCafeteriaName && newCafeteriaLocation)) {
+    if (!cafeteriaIdInput) {
       toast({
-        title: "Please select or create a cafeteria",
+        title: "Please select a cafeteria",
         variant: "destructive",
       });
       return;
     }
-
+  
     setIsLoading(true);
-
+  
     try {
-
-      let targetCafeteriaId = cafeteriaIdInput;
-
-      if (role === "ADMIN" && newCafeteriaName && newCafeteriaLocation) {
-
-        const cafeteria = await api.createCafeteria({
-          name: newCafeteriaName,
-          location: newCafeteriaLocation,
-          isOpen: newCafeteriaIsOpen,
-          collegeId: user.college.collegeId,
-        });
-
-        targetCafeteriaId = cafeteria.cafeteriaId;
-      }
-
+  
       await api.updateCurrentUser({
-        cafeteria: { cafeteriaId: targetCafeteriaId },
+        cafeteria: { cafeteriaId: cafeteriaIdInput }
       });
-
+  
+      const updated = await api.getCurrentUser();
+      setUser(updated);
+  
       toast({
         title: "Setup completed",
       });
-
-      if (role === "ADMIN") navigate("/admin");
-      else navigate("/dashboard");
-
+  
+      if (updated.roles.includes("ADMIN") || updated.roles.includes("CAFETERIA_ADMIN")) {
+        navigate("/admin/entry");
+      } else {
+        navigate("/dashboard");
+      }
+  
     } catch {
-
       toast({
         title: "Error completing setup",
         variant: "destructive",
       });
-
     } finally {
       setIsLoading(false);
     }
   };
-
   /* ================= STEP 1 UI ================= */
 
   if (step === 1) {
@@ -436,21 +471,19 @@ export default function Onboarding() {
             </>
           )}
 
-          <Select onValueChange={setCafeteriaIdInput}>
+        <Select onValueChange={setCafeteriaIdInput}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select Cafeteria" />
+          </SelectTrigger>
 
-            <SelectTrigger>
-              <SelectValue placeholder="Select Cafeteria" />
-            </SelectTrigger>
-
-            <SelectContent>
-              {existingCafeterias.map((c) => (
-                <SelectItem key={c.cafeteriaId} value={c.cafeteriaId}>
-                  {c.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-
-          </Select>
+          <SelectContent>
+            {existingCafeterias.map((c) => (
+              <SelectItem key={c.cafeteriaId} value={c.cafeteriaId}>
+                {c.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
           <Button
             onClick={handleCafeteriaSubmit}

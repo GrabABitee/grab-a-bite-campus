@@ -9,39 +9,45 @@ interface LayoutProps {
 }
 
 export const Layout = ({ userType = "student" }: LayoutProps) => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const location = useLocation();
+
   const isAdminRoute = location.pathname.startsWith("/admin");
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted">
-      {/* Navigation */}
-      <Navbar 
+
+      {/* ================= NAVBAR ================= */}
+      <Navbar
         userType={isAdminRoute ? "admin" : "student"}
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
       />
 
       <div className="flex">
-        {/* Sidebar for admin */}
+
+        {/* ================= SIDEBAR (ADMIN ONLY) ================= */}
         {isAdminRoute && (
-          <Sidebar 
+          <Sidebar
             open={sidebarOpen}
             onOpenChange={setSidebarOpen}
           />
         )}
 
-        {/* Main Content */}
-        <main className={cn(
-          "flex-1 transition-all duration-300",
-          isAdminRoute && sidebarOpen ? "ml-64" : "",
-          isAdminRoute && !sidebarOpen ? "ml-16" : "",
-          "pt-16" // Account for navbar height
-        )}>
+        {/* ================= MAIN CONTENT ================= */}
+        <main
+          className={cn(
+            "flex-1 transition-all duration-300",
+            isAdminRoute && sidebarOpen ? "ml-64" : "",
+            isAdminRoute && !sidebarOpen ? "ml-16" : "",
+            "pt-16"
+          )}
+        >
           <div className="container mx-auto px-4 py-6">
             <Outlet />
           </div>
         </main>
+
       </div>
     </div>
   );
