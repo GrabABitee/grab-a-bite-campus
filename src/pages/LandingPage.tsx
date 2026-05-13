@@ -1,266 +1,175 @@
 import { Button } from "@/components/ui/button";
-
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 
-import { Input } from "@/components/ui/input";
-
-import { Label } from "@/components/ui/label";
-
-import { useToast } from "@/components/ui/use-toast";
-
-import { api } from "@/lib/api";
-
-import { UtensilsCrossed } from "lucide-react";
-
-import { useState } from "react";
+import {
+  ArrowRight,
+  Clock3,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
 
 import { useNavigate } from "react-router-dom";
-
-import { useAuth } from "@/context/AuthContext";
 
 export default function LandingPage() {
 
   const navigate = useNavigate();
 
-  const { toast } = useToast();
-
-  const { setAuth } = useAuth();
-
-  const [email, setEmail] =
-    useState("");
-
-  const [password, setPassword] =
-    useState("");
-
-  const [isLoading, setIsLoading] =
-    useState(false);
-
-  /*
-  LOGIN
-  */
-
-  const handleLogin = async () => {
-
-    if (!email || !password) {
-
-      toast({
-        title: "Missing fields",
-        description:
-          "Enter email and password",
-        variant: "destructive",
-      });
-
-      return;
-    }
-
-    try {
-
-      setIsLoading(true);
-
-      /*
-      LOGIN API
-      */
-
-      const authData =
-        await api.login(
-          email,
-          password
-        );
-
-      console.log(
-        "LOGIN DATA:",
-        authData
-      );
-
-      /*
-      SAVE AUTH
-      */
-
-      localStorage.setItem(
-        "auth",
-        JSON.stringify(authData)
-      );
-
-      /*
-      UPDATE CONTEXT
-      */
-
-      setAuth(authData);
-
-      /*
-      GET CURRENT USER
-      */
-
-      const user =
-        await api.getCurrentUser();
-
-      console.log(
-        "CURRENT USER:",
-        user
-      );
-
-      toast({
-        title:
-          "Login Successful",
-      });
-
-      const isAdmin =
-        user.roles.includes(
-          "ADMIN"
-        );
-
-      const isCafeAdmin =
-        user.roles.includes(
-          "CAFETERIA_ADMIN"
-        );
-
-      /*
-      ADMIN
-      */
-
-      if (isAdmin) {
-
-        navigate("/admin/entry");
-
-        return;
-      }
-
-      /*
-      CAFETERIA ADMIN
-      */
-
-      if (
-        isCafeAdmin &&
-        user.cafeteriaId
-      ) {
-
-        navigate("/admin/entry");
-
-        return;
-      }
-
-      /*
-      STUDENT ONBOARDING
-      */
-
-      if (
-        !user.collegeId ||
-        !user.cafeteriaId
-      ) {
-
-        navigate("/onboarding");
-
-        return;
-      }
-
-      /*
-      STUDENT DASHBOARD
-      */
-
-      navigate("/dashboard");
-
-    } catch (error) {
-
-      console.error(error);
-
-      toast({
-        title: "Login Failed",
-        description:
-          "Invalid email or password",
-        variant: "destructive",
-      });
-
-    } finally {
-
-      setIsLoading(false);
-    }
-  };
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/20">
 
-      <Card className="w-full max-w-md shadow-xl">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100 flex items-center justify-center px-6 py-10">
 
-        <CardHeader className="text-center space-y-4">
+      <div className="max-w-7xl w-full grid lg:grid-cols-2 gap-16 items-center">
 
-          <div className="mx-auto w-16 h-16 bg-primary rounded-2xl flex items-center justify-center">
+        {/* LEFT SECTION */}
 
-            <UtensilsCrossed className="h-8 w-8 text-white" />
+        <div className="space-y-8">
 
-          </div>
+          <div className="flex items-center gap-4">
 
-          <div>
-
-            <CardTitle className="text-2xl">
-              Welcome Back
-            </CardTitle>
-
-            <CardDescription>
-              Sign in to continue to Grab A Bite
-            </CardDescription>
-
-          </div>
-
-        </CardHeader>
-
-        <CardContent className="space-y-5">
-
-          <div className="space-y-2">
-
-            <Label>Email</Label>
-
-            <Input
-              type="email"
-              placeholder="test@example.com"
-              value={email}
-              onChange={(e) =>
-                setEmail(
-                  e.target.value
-                )
-              }
+            <img
+              src="/logo.png"
+              alt="Grab A Bite"
+              className="w-20 h-20 rounded-3xl shadow-xl object-cover"
             />
 
-          </div>
+            <div>
+              <h1 className="text-5xl font-black text-orange-500">
+                Grab A Bite
+              </h1>
 
-          <div className="space-y-2">
-
-            <Label>Password</Label>
-
-            <Input
-              type="password"
-              placeholder="Enter password"
-              value={password}
-              onChange={(e) =>
-                setPassword(
-                  e.target.value
-                )
-              }
-            />
+              <p className="text-gray-500 text-lg mt-1">
+                Smart Cafeteria Pre-ordering System
+              </p>
+            </div>
 
           </div>
 
-          <Button
-            onClick={handleLogin}
-            disabled={isLoading}
-            className="w-full"
-            variant="food"
-          >
+          <div className="space-y-4">
 
-            {isLoading
-              ? "Signing In..."
-              : "Sign In"}
+            <h2 className="text-6xl font-black leading-tight text-gray-900">
 
-          </Button>
+              Skip the Queue.
+              <br />
 
-        </CardContent>
+              <span className="text-orange-500">
+                Grab & Go.
+              </span>
 
-      </Card>
+            </h2>
+
+            <p className="text-xl text-gray-600 leading-relaxed max-w-xl">
+
+              Order cafeteria meals before reaching campus,
+              save waiting time, and enjoy a smooth dining experience.
+
+            </p>
+
+          </div>
+
+          {/* FEATURES */}
+
+          <div className="grid sm:grid-cols-3 gap-4">
+
+            <div className="bg-white rounded-2xl p-5 shadow-lg border border-orange-100">
+
+              <Clock3 className="text-orange-500 mb-3" />
+
+              <h3 className="font-bold text-gray-900">
+                Faster Ordering
+              </h3>
+
+              <p className="text-sm text-gray-500 mt-1">
+                Reduce cafeteria waiting time with online pre-orders.
+              </p>
+
+            </div>
+
+            <div className="bg-white rounded-2xl p-5 shadow-lg border border-orange-100">
+
+              <Sparkles className="text-orange-500 mb-3" />
+
+              <h3 className="font-bold text-gray-900">
+                Smart Suggestions
+              </h3>
+
+              <p className="text-sm text-gray-500 mt-1">
+                Personalized food recommendations for students.
+              </p>
+
+            </div>
+
+            <div className="bg-white rounded-2xl p-5 shadow-lg border border-orange-100">
+
+              <ShieldCheck className="text-orange-500 mb-3" />
+
+              <h3 className="font-bold text-gray-900">
+                Secure Platform
+              </h3>
+
+              <p className="text-sm text-gray-500 mt-1">
+                JWT authentication and secure payment integration.
+              </p>
+
+            </div>
+
+          </div>
+
+        </div>
+
+        {/* RIGHT SECTION */}
+
+        <div className="flex justify-center">
+
+          <Card className="w-full max-w-md border-0 shadow-2xl rounded-3xl bg-white/90 backdrop-blur-xl">
+
+            <CardContent className="p-10">
+
+              <div className="flex flex-col items-center text-center space-y-8">
+
+                <img
+                  src="/logo.png"
+                  alt="logo"
+                  className="w-28 h-28 object-cover rounded-3xl shadow-xl"
+                />
+
+                <div>
+
+                  <h1 className="text-4xl font-black text-gray-900">
+                    Welcome
+                  </h1>
+
+                  <p className="text-gray-500 mt-3 leading-relaxed">
+
+                    Access your cafeteria dashboard,
+                    manage orders, and enjoy a seamless food ordering experience.
+
+                  </p>
+
+                </div>
+
+                <Button
+                  onClick={() => navigate("/auth")}
+                  className="w-full h-14 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white text-lg font-semibold shadow-xl"
+                >
+
+                  Continue to Login
+
+                  <ArrowRight className="ml-2 h-5 w-5" />
+
+                </Button>
+
+              </div>
+
+            </CardContent>
+
+          </Card>
+
+        </div>
+
+      </div>
 
     </div>
   );

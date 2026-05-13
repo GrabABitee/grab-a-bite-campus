@@ -1,11 +1,20 @@
 import React from "react";
+
 import ReactDOM from "react-dom/client";
 
 import App from "./App";
 
 import "./index.css";
 
-import { CartProvider } from "@/context/CartContext";
+import {
+  listenForMessages,
+} from "@/lib/firebase";
+
+/*
+START FIREBASE LISTENER
+*/
+
+listenForMessages();
 
 ReactDOM.createRoot(
   document.getElementById("root")!
@@ -13,11 +22,7 @@ ReactDOM.createRoot(
 
   <React.StrictMode>
 
-    <CartProvider>
-
-      <App />
-
-    </CartProvider>
+    <App />
 
   </React.StrictMode>
 );

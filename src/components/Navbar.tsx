@@ -1,12 +1,12 @@
-import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "@/context/CartContext";
+import { Link, useNavigate } from "react-router-dom";
 
-import { Button } from "@/components/ui/button";
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
 } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 
 import {
   DropdownMenu,
@@ -19,12 +19,12 @@ import {
 import { Badge } from "@/components/ui/badge";
 
 import {
-  Menu,
-  ShoppingCart,
   Bell,
-  User,
-  Settings,
   LogOut,
+  Menu,
+  Settings,
+  ShoppingCart,
+  User,
   UtensilsCrossed,
 } from "lucide-react";
 
@@ -144,7 +144,7 @@ export const Navbar = ({
 
             </Link>
 
-            <Link to="dashboard/orders">
+            <Link to="/dashboard/orders">
 
               <Button
                 variant="ghost"

@@ -5,6 +5,12 @@ import {
   useState,
 } from "react";
 
+import { api } from "@/lib/api";
+
+import {
+  requestNotificationPermission,
+} from "@/lib/firebase";
+
 interface Auth {
   token: string;
   role: string;
@@ -33,28 +39,65 @@ export function AuthProvider({
 
   useEffect(() => {
 
-    const stored =
-      localStorage.getItem("auth");
+    const initializeAuth = async () => {
 
-    if (stored) {
+      const stored =
+        localStorage.getItem("auth");
 
-      const parsed = JSON.parse(stored);
+      if (stored) {
 
-      console.log(
-        "RESTORED AUTH:",
-        parsed
-      );
+        const parsed =
+          JSON.parse(stored);
 
-      setAuth(parsed);
-    }
+        console.log(
+          "RESTORED AUTH:",
+          parsed
+        );
+
+        setAuth(parsed);
+
+        /*
+        FIREBASE PUSH TOKEN
+        */
+
+        try {
+
+          const fcmToken =
+            await requestNotificationPermission();
+
+          if (fcmToken) {
+
+            await api.put(
+              "/users/me/fcm-token",
+              {
+                fcmToken,
+              }
+            );
+
+            console.log(
+              "FCM token saved"
+            );
+          }
+
+        } catch (error) {
+
+          console.log(
+            "FCM ERROR:",
+            error
+          );
+        }
+      }
+    };
+
+    initializeAuth();
 
   }, []);
 
   return (
     <AuthContext.Provider
       value={{
-        auth,
-        setAuth,
+        auth,setAuth
+
       }}
     >
       {children}

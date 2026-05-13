@@ -1,4 +1,5 @@
 import { Toaster } from "@/components/ui/toaster";
+
 import { AuthProvider } from "@/context/AuthContext";
 import { CartProvider } from "@/context/CartContext";
 
@@ -11,64 +12,65 @@ import {
   BrowserRouter,
   Route,
   Routes,
+  Navigate,
 } from "react-router-dom";
 
 import { Layout } from "./components/Layout";
 import ProtectedRoute from "./components/ProtectedRoute";
 
-/* ===================================== */
+/* ========================= */
+/* COMMON PAGES */
+/* ========================= */
+
+import LandingPage from "./pages/LandingPage";
+import Onboarding from "./pages/Onboarding";
+import NotFound from "./pages/NotFound";
+
+/* ========================= */
+/* AUTH PAGE */
+/* ========================= */
+
+import AuthPage from "./pages/AuthPage";
+
+/* ========================= */
+/* STUDENT PAGES */
+/* ========================= */
+
+import Dashboard from "./pages/student/Dashboard";
+import CartPage from "./pages/student/CartPage";
+import StudentOrders from "./pages/student/StudentOrders";
+import AIPicks from "./pages/student/AIPicks";
+
+/* ========================= */
 /* ADMIN PAGES */
-/* ===================================== */
+/* ========================= */
 
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminEntryPage from "./pages/admin/AdminEntryPage";
 import AdminMenu from "./pages/admin/AdminMenu";
-import AdminOnboarding from "./pages/admin/AdminOnboarding";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminStandardMenu from "./pages/admin/AdminStandardMenu";
-
-/* ===================================== */
-/* STUDENT PAGES */
-/* ===================================== */
-
-import AIPicks from "./pages/student/AIPicks";
-import CartPage from "./pages/student/CartPage";
-import Dashboard from "./pages/student/Dashboard";
-import Orders from "./pages/student/StudentOrders";
-
-/* ===================================== */
-/* COMMON PAGES */
-/* ===================================== */
-
-import LandingPage from "./pages/LandingPage";
-import NotFound from "./pages/NotFound";
-import Onboarding from "./pages/Onboarding";
+import AdminOnboarding from "./pages/admin/AdminOnboarding";
 
 const queryClient = new QueryClient();
 
 function App() {
-
   return (
-
     <QueryClientProvider client={queryClient}>
-
-      {/* ===================================== */}
-      {/* AUTH + CART PROVIDERS */}
-      {/* ===================================== */}
 
       <AuthProvider>
 
         <CartProvider>
 
-          <Toaster />
-
           <BrowserRouter>
+
+            <Toaster />
 
             <Routes>
 
-              {/* ===================================== */}
-              {/* PUBLIC */}
-              {/* ===================================== */}
+              {/* ========================= */}
+              {/* PUBLIC ROUTES */}
+              {/* ========================= */}
 
               <Route
                 path="/"
@@ -76,13 +78,18 @@ function App() {
               />
 
               <Route
+                path="/auth"
+                element={<AuthPage />}
+              />
+
+              <Route
                 path="/onboarding"
                 element={<Onboarding />}
               />
 
-              {/* ===================================== */}
-              {/* STUDENT */}
-              {/* ===================================== */}
+              {/* ========================= */}
+              {/* STUDENT ROUTES */}
+              {/* ========================= */}
 
               <Route
                 path="/dashboard"
@@ -95,28 +102,20 @@ function App() {
                 }
               >
 
-                {/* DASHBOARD */}
-
                 <Route
                   index
                   element={<Dashboard />}
                 />
-
-                {/* CART */}
 
                 <Route
                   path="cart"
                   element={<CartPage />}
                 />
 
-                {/* ORDERS */}
-
                 <Route
                   path="orders"
-                  element={<Orders />}
+                  element={<StudentOrders />}
                 />
-
-                {/* AI PICKS */}
 
                 <Route
                   path="ai-picks"
@@ -125,9 +124,9 @@ function App() {
 
               </Route>
 
-              {/* ===================================== */}
-              {/* ADMIN */}
-              {/* ===================================== */}
+              {/* ========================= */}
+              {/* ADMIN ROUTES */}
+              {/* ========================= */}
 
               <Route
                 path="/admin"
@@ -143,46 +142,43 @@ function App() {
                 }
               >
 
-                {/* DASHBOARD */}
-
                 <Route
                   index
-                  element={<AdminDashboard />}
+                  element={
+                    <Navigate to="/admin/entry" />
+                  }
                 />
-
-                {/* ENTRY */}
 
                 <Route
                   path="entry"
                   element={<AdminEntryPage />}
                 />
 
-                {/* STANDARD MENU */}
-
                 <Route
-                  path="standard-menu"
-                  element={<AdminStandardMenu />}
+                  path="dashboard"
+                  element={<AdminDashboard />}
                 />
-
-                {/* MENU */}
 
                 <Route
                   path="menu"
                   element={<AdminMenu />}
                 />
 
-                {/* ORDERS */}
-
                 <Route
                   path="orders"
                   element={<AdminOrders />}
                 />
 
+                <Route
+                  path="standard-menu"
+                  element={<AdminStandardMenu />}
+                />
+
               </Route>
 
-              {/* ===================================== */}
+              {/* ========================= */}
               {/* ADMIN ONBOARDING */}
-              {/* ===================================== */}
+              {/* ========================= */}
 
               <Route
                 path="/admin/onboarding"
@@ -198,9 +194,9 @@ function App() {
                 }
               />
 
-              {/* ===================================== */}
+              {/* ========================= */}
               {/* 404 */}
-              {/* ===================================== */}
+              {/* ========================= */}
 
               <Route
                 path="*"

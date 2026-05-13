@@ -54,7 +54,7 @@ export default function CartPage() {
   
       alert("Order placed successfully!");
   
-      navigate("/student/orders");
+      navigate("/dashboard/orders");
   
     } catch (err) {
       console.error(err);
