@@ -44,13 +44,13 @@ import AIPicks from "./pages/student/AIPicks";
 /* ========================= */
 /* ADMIN PAGES */
 /* ========================= */
-
-import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminEntryPage from "./pages/admin/AdminEntryPage";
 import AdminMenu from "./pages/admin/AdminMenu";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminStandardMenu from "./pages/admin/AdminStandardMenu";
 import AdminOnboarding from "./pages/admin/AdminOnboarding";
+import Analytics from "./pages/admin/Analytics";
+
 
 const queryClient = new QueryClient();
 
@@ -154,10 +154,6 @@ function App() {
                   element={<AdminEntryPage />}
                 />
 
-                <Route
-                  path="dashboard"
-                  element={<AdminDashboard />}
-                />
 
                 <Route
                   path="menu"
@@ -172,6 +168,10 @@ function App() {
                 <Route
                   path="standard-menu"
                   element={<AdminStandardMenu />}
+                />
+                <Route
+                  path="/admin/analytics"
+                  element={<Analytics />}
                 />
 
               </Route>

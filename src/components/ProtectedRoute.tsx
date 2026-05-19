@@ -1,4 +1,5 @@
 import { Navigate } from "react-router-dom";
+
 import { useAuth } from "@/context/AuthContext";
 
 interface Props {
@@ -11,31 +12,33 @@ export default function ProtectedRoute({
   allowedRoles,
 }: Props) {
 
-  const authContext = useAuth();
-
-  const auth = authContext.auth;
+  const { auth } = useAuth();
 
   console.log("AUTH:", auth);
 
   /*
-  NO LOGIN
+  =========================================
+  NOT LOGGED IN
+  =========================================
   */
 
   if (!auth) {
 
-    console.log("NO USER");
+    console.log("NO AUTH");
 
     return <Navigate to="/" replace />;
   }
 
   /*
-  CLEAN ROLE
+  =========================================
+  ROLE
+  =========================================
   */
 
-  const cleanRole =
-    auth.role.replace("ROLE_", "");
+  const role =
+    auth.role || "";
 
-  console.log("ROLE:", cleanRole);
+  console.log("ROLE:", role);
 
   console.log(
     "ALLOWED:",
@@ -43,21 +46,35 @@ export default function ProtectedRoute({
   );
 
   /*
-  CHECK ACCESS
+  =========================================
+  ACCESS CHECK
+  =========================================
   */
 
   const hasAccess =
-    allowedRoles.includes(cleanRole);
+    allowedRoles.includes(role);
 
   console.log(
-    "ACCESS:",
+    "HAS ACCESS:",
     hasAccess
   );
+
+  /*
+  =========================================
+  BLOCK ACCESS
+  =========================================
+  */
 
   if (!hasAccess) {
 
     return <Navigate to="/" replace />;
   }
+
+  /*
+  =========================================
+  ALLOW ROUTE
+  =========================================
+  */
 
   return children;
 }

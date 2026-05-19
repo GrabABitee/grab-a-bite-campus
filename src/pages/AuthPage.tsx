@@ -4,9 +4,13 @@ import axios from "axios";
 
 import { useNavigate } from "react-router-dom";
 
+import { useAuth } from "@/context/AuthContext";
+
 export default function AuthPage() {
 
   const navigate = useNavigate();
+
+  const { setAuth } = useAuth();
 
   /*
   =========================================
@@ -37,7 +41,7 @@ export default function AuthPage() {
 
   /*
   =========================================
-  API
+  API URL
   =========================================
   */
 
@@ -52,7 +56,11 @@ export default function AuthPage() {
 
   const sendOtp = async () => {
 
-    if (!email || !password || !name) {
+    if (
+      !email ||
+      !password ||
+      !name
+    ) {
 
       alert(
         "Please fill all fields"
@@ -72,7 +80,9 @@ export default function AuthPage() {
         }
       );
 
-      alert("OTP sent successfully");
+      alert(
+        "OTP sent successfully"
+      );
 
       setStep("otp");
 
@@ -80,7 +90,9 @@ export default function AuthPage() {
 
       console.log(error);
 
-      alert("Failed to send OTP");
+      alert(
+        "Failed to send OTP"
+      );
 
     } finally {
 
@@ -90,7 +102,7 @@ export default function AuthPage() {
 
   /*
   =========================================
-  VERIFY OTP + REGISTER
+  VERIFY OTP
   =========================================
   */
 
@@ -98,7 +110,9 @@ export default function AuthPage() {
 
     if (!otp) {
 
-      alert("Please enter OTP");
+      alert(
+        "Please enter OTP"
+      );
 
       return;
     }
@@ -123,7 +137,7 @@ export default function AuthPage() {
 
       /*
       =========================================
-      REGISTER USER
+      REGISTER
       =========================================
       */
 
@@ -153,6 +167,12 @@ export default function AuthPage() {
 
       setOtp("");
 
+      setName("");
+
+      setEmail("");
+
+      setPassword("");
+
     } catch (error: any) {
 
       console.log(error);
@@ -162,7 +182,9 @@ export default function AuthPage() {
       ) {
 
         alert(
-          error.response.data
+          JSON.stringify(
+            error.response.data
+          )
         );
 
       } else {
@@ -186,7 +208,10 @@ export default function AuthPage() {
 
   const login = async () => {
 
-    if (!email || !password) {
+    if (
+      !email ||
+      !password
+    ) {
 
       alert(
         "Please fill all fields"
@@ -199,6 +224,12 @@ export default function AuthPage() {
 
       setLoading(true);
 
+      /*
+      =========================================
+      LOGIN API
+      =========================================
+      */
+
       const response =
         await axios.post(
           `${API}/auth/login`,
@@ -208,6 +239,74 @@ export default function AuthPage() {
           }
         );
 
+      console.log(
+        "LOGIN RESPONSE:",
+        response.data
+      );
+
+      /*
+      =========================================
+      TOKEN
+      =========================================
+      */
+
+      const token =
+        response.data.token;
+
+      /*
+      =========================================
+      GET CURRENT USER
+      =========================================
+      */
+
+      const userResponse =
+        await axios.get(
+          `${API}/users/me`,
+          {
+            headers: {
+              Authorization:
+                `Bearer ${token}`,
+            },
+          }
+        );
+
+      const user =
+        userResponse.data;
+
+      console.log(
+        "CURRENT USER:",
+        user
+      );
+
+      /*
+      =========================================
+      ROLE
+      =========================================
+      */
+
+      const role =
+        user.roles?.[0] ||
+        user.role;
+
+      console.log(
+        "ROLE:",
+        role
+      );
+
+      /*
+      =========================================
+      AUTH OBJECT
+      =========================================
+      */
+
+      const authData = {
+        token,
+        role,
+        userId: user.id,
+        cafeteriaId: user.cafeteriaId,
+        collegeId: user.collegeId,
+      };
+
       /*
       =========================================
       SAVE AUTH
@@ -216,28 +315,113 @@ export default function AuthPage() {
 
       localStorage.setItem(
         "auth",
-        JSON.stringify(
-          response.data
-        )
+        JSON.stringify(authData)
       );
-
-      alert("Login successful");
+      localStorage.setItem(
+        "cafeteriaId",
+        user.cafeteriaId || ""
+      );
+      localStorage.setItem(
+        "collegeId",
+        user.collegeId || ""
+      );
 
       /*
       =========================================
-      REDIRECT
+      UPDATE CONTEXT
       =========================================
       */
 
-      navigate("/dashboard");
+      setAuth(authData);
 
-    } catch (error) {
+      /*
+      =========================================
+      STUDENT FLOW
+      =========================================
+      */
+
+      if (
+        role === "STUDENT"
+      ) {
+
+        /*
+        =========================================
+        ONBOARDING CHECK
+        =========================================
+        */
+
+        if (
+          !user.collegeId ||
+          !user.cafeteriaId
+        ) {
+
+          navigate(
+            "/onboarding"
+          );
+
+          return;
+        }
+
+        /*
+        =========================================
+        DASHBOARD
+        =========================================
+        */
+
+        navigate(
+          "/dashboard"
+        );
+
+        return;
+      }
+
+      /*
+      =========================================
+      ADMIN FLOW
+      =========================================
+      */
+
+      if (
+        role === "ADMIN" ||
+        role ===
+          "CAFETERIA_ADMIN"
+      ) {
+
+        navigate(
+          "/admin/entry"
+        );
+
+        return;
+      }
+
+      /*
+      =========================================
+      FALLBACK
+      =========================================
+      */
+
+      navigate("/");
+
+    } catch (error: any) {
 
       console.log(error);
 
-      alert(
-        "Invalid credentials"
-      );
+      if (
+        error?.response?.data
+      ) {
+
+        alert(
+          JSON.stringify(
+            error.response.data
+          )
+        );
+
+      } else {
+
+        alert(
+          "Invalid credentials"
+        );
+      }
 
     } finally {
 
@@ -245,15 +429,17 @@ export default function AuthPage() {
     }
   };
 
+  /*
+  =========================================
+  UI
+  =========================================
+  */
+
   return (
 
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100 flex items-center justify-center px-4 py-10">
 
       <div className="w-full max-w-md bg-white rounded-[32px] shadow-2xl border border-orange-100 p-8">
-
-        {/* ========================================= */}
-        {/* LOGO */}
-        {/* ========================================= */}
 
         <div className="flex flex-col items-center">
 
@@ -275,17 +461,15 @@ export default function AuthPage() {
 
         </div>
 
-        {/* ========================================= */}
-        {/* FORM */}
-        {/* ========================================= */}
-
         {
-          step === "form" ? (
+          step === "form"
+          ? (
 
             <div className="mt-10 space-y-5">
 
               {
-                mode === "signup" && (
+                mode ===
+                  "signup" && (
 
                   <input
                     type="text"
@@ -326,18 +510,19 @@ export default function AuthPage() {
               />
 
               {
-                mode === "signin"
+                mode ===
+                  "signin"
                 ? (
 
                   <button
                     onClick={login}
                     disabled={loading}
-                    className="w-full bg-gradient-to-r from-orange-500 to-orange-400 text-white rounded-2xl p-4 font-bold text-lg hover:scale-[1.02] active:scale-[0.99] transition-all shadow-lg"
+                    className="w-full bg-gradient-to-r from-orange-500 to-orange-400 text-white rounded-2xl p-4 font-bold text-lg"
                   >
                     {
                       loading
-                      ? "Please wait..."
-                      : "Sign In"
+                        ? "Please wait..."
+                        : "Sign In"
                     }
                   </button>
 
@@ -347,26 +532,23 @@ export default function AuthPage() {
                   <button
                     onClick={sendOtp}
                     disabled={loading}
-                    className="w-full bg-gradient-to-r from-orange-500 to-orange-400 text-white rounded-2xl p-4 font-bold text-lg hover:scale-[1.02] active:scale-[0.99] transition-all shadow-lg"
+                    className="w-full bg-gradient-to-r from-orange-500 to-orange-400 text-white rounded-2xl p-4 font-bold text-lg"
                   >
                     {
                       loading
-                      ? "Sending OTP..."
-                      : "Generate OTP"
+                        ? "Sending OTP..."
+                        : "Generate OTP"
                     }
                   </button>
 
                 )
               }
 
-              {/* ========================================= */}
-              {/* TOGGLE */}
-              {/* ========================================= */}
-
               <div className="text-center pt-3">
 
                 {
-                  mode === "signin"
+                  mode ===
+                    "signin"
                   ? (
 
                     <button
@@ -428,7 +610,7 @@ export default function AuthPage() {
               <input
                 type="text"
                 placeholder="Enter OTP"
-                className="w-full border border-gray-200 rounded-2xl p-4 text-center text-2xl tracking-[10px] outline-none focus:ring-2 focus:ring-green-400 transition"
+                className="w-full border border-gray-200 rounded-2xl p-4 text-center text-2xl tracking-[10px]"
                 value={otp}
                 onChange={(e) =>
                   setOtp(
@@ -440,12 +622,12 @@ export default function AuthPage() {
               <button
                 onClick={verifyOtp}
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-green-500 to-emerald-400 text-white rounded-2xl p-4 font-bold text-lg hover:scale-[1.02] active:scale-[0.99] transition-all shadow-lg"
+                className="w-full bg-gradient-to-r from-green-500 to-emerald-400 text-white rounded-2xl p-4 font-bold text-lg"
               >
                 {
                   loading
-                  ? "Verifying..."
-                  : "Verify OTP"
+                    ? "Verifying..."
+                    : "Verify OTP"
                 }
               </button>
 

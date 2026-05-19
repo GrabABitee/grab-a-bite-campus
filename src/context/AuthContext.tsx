@@ -11,18 +11,49 @@ import {
   requestNotificationPermission,
 } from "@/lib/firebase";
 
+/*
+=========================================
+AUTH TYPE
+=========================================
+*/
+
 interface Auth {
-  token: string;
-  role: string;
+  token?: string;
+  role?: string;
+  userId?: string;
+  cafeteriaId?: string;
+  collegeId?: string;
 }
+
+/*
+=========================================
+CONTEXT TYPE
+=========================================
+*/
 
 interface AuthContextType {
   auth: Auth | null;
-  setAuth: (auth: Auth | null) => void;
+  setAuth: (
+    auth: Auth | null
+  ) => void;
 }
 
+/*
+=========================================
+CREATE CONTEXT
+=========================================
+*/
+
 const AuthContext =
-  createContext<AuthContextType | null>(null);
+  createContext<AuthContextType | null>(
+    null
+  );
+
+/*
+=========================================
+AUTH PROVIDER
+=========================================
+*/
 
 export function AuthProvider({
   children,
@@ -34,76 +65,125 @@ export function AuthProvider({
     useState<Auth | null>(null);
 
   /*
-  LOAD AUTH FROM LOCAL STORAGE
+  =========================================
+  LOAD AUTH FROM STORAGE
+  =========================================
   */
 
   useEffect(() => {
 
-    const initializeAuth = async () => {
-
-      const stored =
-        localStorage.getItem("auth");
-
-      if (stored) {
-
-        const parsed =
-          JSON.parse(stored);
-
-        console.log(
-          "RESTORED AUTH:",
-          parsed
-        );
-
-        setAuth(parsed);
-
-        /*
-        FIREBASE PUSH TOKEN
-        */
+    const initializeAuth =
+      async () => {
 
         try {
 
-          const fcmToken =
-            await requestNotificationPermission();
-
-          if (fcmToken) {
-
-            await api.put(
-              "/users/me/fcm-token",
-              {
-                fcmToken,
-              }
+          const stored =
+            localStorage.getItem(
+              "auth"
             );
 
+          if (!stored) {
+
+            return;
+          }
+
+          const parsed =
+            JSON.parse(stored);
+
+          console.log(
+            "RESTORED AUTH:",
+            parsed
+          );
+
+          /*
+          =========================================
+          SET AUTH STATE
+          =========================================
+          */
+
+          setAuth(parsed);
+
+          /*
+          =========================================
+          FIREBASE PUSH TOKEN
+          =========================================
+          */
+
+          try {
+
+            const fcmToken =
+              await requestNotificationPermission();
+
+            if (
+              fcmToken &&
+              parsed.token
+            ) {
+
+await api.put(
+  "/users/me/fcm-token",
+  {
+    fcmToken,
+  },
+  {
+    headers: {
+      Authorization:
+        `Bearer ${parsed.token}`,
+    },
+  }
+);
+
+              console.log(
+                "FCM TOKEN SAVED"
+              );
+            }
+
+          } catch (error) {
+
             console.log(
-              "FCM token saved"
+              "FCM ERROR:",
+              error
             );
           }
 
         } catch (error) {
 
           console.log(
-            "FCM ERROR:",
+            "AUTH INIT ERROR:",
             error
           );
         }
-      }
-    };
+      };
 
     initializeAuth();
 
   }, []);
 
+  /*
+  =========================================
+  PROVIDER
+  =========================================
+  */
+
   return (
+
     <AuthContext.Provider
       value={{
-        auth,setAuth
-
+        auth,
+        setAuth,
       }}
     >
+
       {children}
+
     </AuthContext.Provider>
   );
 }
+
+/*
+=========================================
+USE AUTH
+=========================================
+*/
 
 export const useAuth = () => {
 

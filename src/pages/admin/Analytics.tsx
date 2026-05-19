@@ -1,230 +1,524 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
-import { TrendingUp, TrendingDown, DollarSign, Clock, Users, ShoppingBag } from "lucide-react";
+import {
+  BarChart3,
+  ShoppingBag,
+  Users,
+  IndianRupee,
+  Clock3,
+} from "lucide-react";
+
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
+} from "recharts";
+
+import { useEffect, useMemo, useState } from "react";
+import { api } from "@/lib/api";
 
 export default function Analytics() {
-  const salesData = [
-    { name: 'Mon', orders: 45, revenue: 2250 },
-    { name: 'Tue', orders: 52, revenue: 2860 },
-    { name: 'Wed', orders: 38, revenue: 1950 },
-    { name: 'Thu', orders: 61, revenue: 3250 },
-    { name: 'Fri', orders: 73, revenue: 3950 },
-    { name: 'Sat', orders: 35, revenue: 1850 },
-    { name: 'Sun', orders: 28, revenue: 1520 }
-  ];
 
-  const menuItemsData = [
-    { name: 'Masala Dosa', value: 25, color: '#ff6b35' },
-    { name: 'Chole Bhature', value: 20, color: '#f7931e' },
-    { name: 'Biryani', value: 18, color: '#ffd700' },
-    { name: 'Rajma Rice', value: 15, color: '#7cb342' },
-    { name: 'Others', value: 22, color: '#42a5f5' }
-  ];
+  const [orders, setOrders] = useState<any[]>([]);
+  const [timeline, setTimeline] = useState("weekly");
 
-  const hourlyData = [
-    { hour: '8AM', orders: 12 },
-    { hour: '9AM', orders: 18 },
-    { hour: '10AM', orders: 8 },
-    { hour: '11AM', orders: 5 },
-    { hour: '12PM', orders: 25 },
-    { hour: '1PM', orders: 35 },
-    { hour: '2PM', orders: 28 },
-    { hour: '3PM', orders: 15 },
-    { hour: '4PM', orders: 10 },
-    { hour: '5PM', orders: 8 },
-    { hour: '6PM', orders: 22 },
-    { hour: '7PM', orders: 18 }
-  ];
+  /* ================= LOAD ORDERS ================= */
 
-  const stats = [
-    {
-      title: "Total Revenue",
-      value: "₹45,250",
-      change: "+12.5%",
-      trend: "up",
-      icon: DollarSign,
-      color: "text-green-600"
-    },
-    {
-      title: "Total Orders",
-      value: "332",
-      change: "+8.1%",
-      trend: "up",
-      icon: ShoppingBag,
-      color: "text-blue-600"
-    },
-    {
-      title: "Active Students",
-      value: "127",
-      change: "-2.4%",
-      trend: "down",
-      icon: Users,
-      color: "text-purple-600"
-    },
-    {
-      title: "Avg Order Time",
-      value: "18 min",
-      change: "-5.2%",
-      trend: "up",
-      icon: Clock,
-      color: "text-orange-600"
+  useEffect(() => {
+
+    const loadAnalytics = async () => {
+
+      try {
+
+        const data = await api.getOrders();
+
+        setOrders(data || []);
+
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    loadAnalytics();
+
+  }, []);
+
+  /* ================= FILTER ORDERS ================= */
+
+  const filteredOrders = useMemo(() => {
+
+    const now = new Date();
+
+    return orders.filter((order) => {
+
+      const createdAt = new Date(order.createdAt);
+
+      const diff =
+        (now.getTime() - createdAt.getTime()) /
+        (1000 * 60 * 60 * 24);
+
+      if (timeline === "daily") {
+        return diff <= 1;
+      }
+
+      if (timeline === "weekly") {
+        return diff <= 7;
+      }
+
+      if (timeline === "monthly") {
+        return diff <= 30;
+      }
+
+      return true;
+    });
+
+  }, [orders, timeline]);
+
+  /* ================= KPIs ================= */
+
+  const revenue = filteredOrders.reduce(
+    (sum, order) =>
+      sum + Number(order.totalAmount || 0),
+    0
+  );
+
+  const totalOrders = filteredOrders.length;
+
+  const activeStudents = new Set(
+    filteredOrders.map((o) => o.studentName)
+  ).size;
+
+  const avgOrder =
+    totalOrders > 0
+      ? Math.round(revenue / totalOrders)
+      : 0;
+
+  /* ================= STATUS COUNTS ================= */
+
+  const pendingCount = filteredOrders.filter(
+    (o) => o.status === "PENDING"
+  ).length;
+
+  const completedCount = filteredOrders.filter(
+    (o) => o.status === "COMPLETED"
+  ).length;
+
+  const preparingCount = filteredOrders.filter(
+    (o) => o.status === "PREPARING"
+  ).length;
+
+  /* ================= SALES CHART ================= */
+
+  const salesMap: any = {};
+
+  filteredOrders.forEach((order) => {
+
+    const date = new Date(order.createdAt);
+
+    let key = "";
+
+    if (timeline === "daily") {
+
+      key = `${date.getHours()}:00`;
+
+    } else {
+
+      key = date.toLocaleDateString("en-US", {
+        weekday: "short",
+      });
     }
-  ];
 
-  const topItems = [
-    { name: "Masala Dosa", orders: 85, revenue: "₹5,100" },
-    { name: "Chole Bhature", orders: 67, revenue: "₹5,360" },
-    { name: "Biryani", orders: 58, revenue: "₹8,700" },
-    { name: "Rajma Rice", orders: 52, revenue: "₹4,940" },
-    { name: "Paneer Butter Masala", orders: 45, revenue: "₹6,300" }
+    salesMap[key] =
+      (salesMap[key] || 0) +
+      Number(order.totalAmount || 0);
+  });
+
+  const salesData = Object.keys(salesMap).map(
+    (key) => ({
+      name: key,
+      revenue: salesMap[key],
+    })
+  );
+
+  /* ================= TOP SELLING ITEMS ================= */
+
+  const itemMap: any = {};
+
+  filteredOrders.forEach((order) => {
+
+    order.items?.forEach((item: any) => {
+
+      itemMap[item.itemName] =
+        (itemMap[item.itemName] || 0) +
+        item.quantity;
+    });
+  });
+
+  const topItems = Object.keys(itemMap)
+    .map((name) => ({
+      name,
+      quantity: itemMap[name],
+    }))
+    .sort((a, b) => b.quantity - a.quantity)
+    .slice(0, 5);
+
+  /* ================= PIE DATA ================= */
+
+  const pieData = [
+    {
+      name: "Pending",
+      value: pendingCount,
+      color: "#f59e0b",
+    },
+    {
+      name: "Preparing",
+      value: preparingCount,
+      color: "#3b82f6",
+    },
+    {
+      name: "Completed",
+      value: completedCount,
+      color: "#10b981",
+    },
   ];
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="min-h-screen bg-[#fafafa] p-6">
+
+      {/* HEADER */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
+
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Analytics Dashboard</h1>
-          <p className="text-muted-foreground">Track your cafeteria performance and insights</p>
+
+          <h1 className="text-4xl font-bold text-slate-900">
+            Analytics Dashboard
+          </h1>
+
+          <p className="text-slate-500 mt-2">
+            Real cafeteria insights and performance metrics
+          </p>
+
         </div>
-        <div className="flex gap-2">
-          <Select defaultValue="7days">
-            <SelectTrigger className="w-32">
-              <SelectValue placeholder="Period" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="today">Today</SelectItem>
-              <SelectItem value="7days">7 Days</SelectItem>
-              <SelectItem value="30days">30 Days</SelectItem>
-              <SelectItem value="90days">90 Days</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button variant="outline">Export Report</Button>
-        </div>
+
+        {/* FILTER */}
+        <select
+          value={timeline}
+          onChange={(e) => setTimeline(e.target.value)}
+          className="
+            h-11
+            px-4
+            rounded-xl
+            border
+            border-slate-200
+            bg-white
+            shadow-sm
+            outline-none
+          "
+        >
+          <option value="daily">
+            Daily
+          </option>
+
+          <option value="weekly">
+            Weekly
+          </option>
+
+          <option value="monthly">
+            Monthly
+          </option>
+
+        </select>
+
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat, index) => (
-          <Card key={index}>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 bg-${stat.color.split('-')[1]}-500/20 rounded-lg flex items-center justify-center`}>
-                  <stat.icon className={`h-5 w-5 ${stat.color}`} />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm text-muted-foreground">{stat.title}</p>
-                  <div className="flex items-center gap-2">
-                    <p className="text-2xl font-bold">{stat.value}</p>
-                    <div className={`flex items-center text-sm ${
-                      stat.trend === 'up' ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {stat.trend === 'up' ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                      {stat.change}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {/* KPI GRID */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Sales Chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Weekly Sales Overview</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={salesData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="orders" fill="#ff6b35" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+        <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
 
-        {/* Popular Items */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Popular Menu Items</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={menuItemsData}
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                >
-                  {menuItemsData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
+          <div className="flex items-center justify-between">
 
-      {/* Hourly Orders and Top Items */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Hourly Orders */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Hourly Order Distribution</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={hourlyData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="hour" />
-                <YAxis />
-                <Tooltip />
-                <Line type="monotone" dataKey="orders" stroke="#ff6b35" strokeWidth={2} />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+            <div>
 
-        {/* Top Items List */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Top Selling Items</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {topItems.map((item, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                  <div>
-                    <p className="font-medium text-sm">{item.name}</p>
-                    <p className="text-xs text-muted-foreground">{item.orders} orders</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold text-primary">{item.revenue}</p>
-                    <Badge variant="outline" className="text-xs">
-                      #{index + 1}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
+              <p className="text-slate-500 text-sm">
+                Revenue
+              </p>
+
+              <h2 className="text-3xl font-bold mt-2">
+                ₹{revenue}
+              </h2>
+
             </div>
-          </CardContent>
-        </Card>
+
+            <div className="w-14 h-14 rounded-2xl bg-green-100 flex items-center justify-center">
+              <IndianRupee className="text-green-600" />
+            </div>
+
+          </div>
+
+        </div>
+
+        <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+
+          <div className="flex items-center justify-between">
+
+            <div>
+
+              <p className="text-slate-500 text-sm">
+                Orders
+              </p>
+
+              <h2 className="text-3xl font-bold mt-2">
+                {totalOrders}
+              </h2>
+
+            </div>
+
+            <div className="w-14 h-14 rounded-2xl bg-orange-100 flex items-center justify-center">
+              <ShoppingBag className="text-orange-500" />
+            </div>
+
+          </div>
+
+        </div>
+
+        <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+
+          <div className="flex items-center justify-between">
+
+            <div>
+
+              <p className="text-slate-500 text-sm">
+                Active Students
+              </p>
+
+              <h2 className="text-3xl font-bold mt-2">
+                {activeStudents}
+              </h2>
+
+            </div>
+
+            <div className="w-14 h-14 rounded-2xl bg-violet-100 flex items-center justify-center">
+              <Users className="text-violet-600" />
+            </div>
+
+          </div>
+
+        </div>
+
+        <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+
+          <div className="flex items-center justify-between">
+
+            <div>
+
+              <p className="text-slate-500 text-sm">
+                Avg Order
+              </p>
+
+              <h2 className="text-3xl font-bold mt-2">
+                ₹{avgOrder}
+              </h2>
+
+            </div>
+
+            <div className="w-14 h-14 rounded-2xl bg-blue-100 flex items-center justify-center">
+              <Clock3 className="text-blue-600" />
+            </div>
+
+          </div>
+
+        </div>
+
       </div>
+
+      {/* CHART GRID */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
+
+        {/* SALES */}
+        <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+
+          <div className="flex items-center gap-3 mb-6">
+
+            <BarChart3 className="text-slate-700" />
+
+            <h2 className="text-xl font-semibold">
+              Revenue Overview
+            </h2>
+
+          </div>
+
+          <div className="h-[320px]">
+
+            <ResponsiveContainer width="100%" height="100%">
+
+              <BarChart data={salesData}>
+
+                <XAxis dataKey="name" />
+
+                <YAxis />
+
+                <Tooltip />
+
+                <Bar
+                  dataKey="revenue"
+                  radius={[10, 10, 0, 0]}
+                  fill="#3b82f6"
+                />
+
+              </BarChart>
+
+            </ResponsiveContainer>
+
+          </div>
+
+        </div>
+
+        {/* STATUS PIE */}
+        <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+
+          <h2 className="text-xl font-semibold mb-6">
+            Order Status
+          </h2>
+
+          <div className="h-[320px]">
+
+            <ResponsiveContainer width="100%" height="100%">
+
+              <PieChart>
+
+                <Pie
+                  data={pieData}
+                  dataKey="value"
+                  outerRadius={110}
+                  label
+                >
+
+                  {pieData.map((entry, index) => (
+
+                    <Cell
+                      key={index}
+                      fill={entry.color}
+                    />
+
+                  ))}
+
+                </Pie>
+
+                <Tooltip />
+
+              </PieChart>
+
+            </ResponsiveContainer>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* BOTTOM GRID */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+
+        {/* TREND */}
+        <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+
+          <h2 className="text-xl font-semibold mb-6">
+            Revenue Trend
+          </h2>
+
+          <div className="h-[320px]">
+
+            <ResponsiveContainer width="100%" height="100%">
+
+              <LineChart data={salesData}>
+
+                <XAxis dataKey="name" />
+
+                <YAxis />
+
+                <Tooltip />
+
+                <Line
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke="#8b5cf6"
+                  strokeWidth={3}
+                />
+
+              </LineChart>
+
+            </ResponsiveContainer>
+
+          </div>
+
+        </div>
+
+        {/* TOP ITEMS */}
+        <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+
+          <h2 className="text-xl font-semibold mb-6">
+            Top Selling Items
+          </h2>
+
+          <div className="space-y-4">
+
+            {topItems.map((item, index) => (
+
+              <div
+                key={item.name}
+                className="
+                  flex
+                  items-center
+                  justify-between
+                  p-4
+                  rounded-2xl
+                  bg-slate-50
+                "
+              >
+
+                <div>
+
+                  <p className="font-semibold text-slate-900">
+                    {item.name}
+                  </p>
+
+                  <p className="text-sm text-slate-500">
+                    {item.quantity} sold
+                  </p>
+
+                </div>
+
+                <div className="
+                  w-10
+                  h-10
+                  rounded-xl
+                  bg-slate-900
+                  text-white
+                  flex
+                  items-center
+                  justify-center
+                  font-semibold
+                ">
+                  #{index + 1}
+                </div>
+
+              </div>
+
+            ))}
+
+          </div>
+
+        </div>
+
+      </div>
+
     </div>
   );
 }
